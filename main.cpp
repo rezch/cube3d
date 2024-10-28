@@ -19,6 +19,10 @@ struct Point3D {
         return { x - o.x, y - o.y, z - o.z };
     }
 
+    Point3D operator * (double t) const {
+        return { t * x, t * y, t * z };
+    }
+
     double x;
     double y;
     double z;
@@ -102,13 +106,9 @@ std::optional<Point3D> intersection(const Plane& p, const Line& l, double eps = 
     if (std::abs(n.scalar_mult(l.l)) < eps) // line pendicular to plane
         return std::nullopt;
 
-    double t = n.scalar_mult(l.o) / n.scalar_mult(l.l);
-
-    return std::optional<Point3D>({
-        l.o.x - l.l.x * t,
-        l.o.y - l.l.y * t,
-        l.o.z - l.l.z * t,
-    });
+    return std::optional<Point3D>(
+        l.o - l.l * (n.scalar_mult(l.o) / n.scalar_mult(l.l))
+    );
 }
 
 std::optional<Vector3D> projection(const Plane& p, const Vector3D& v) {
