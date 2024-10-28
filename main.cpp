@@ -97,28 +97,32 @@ struct Plane {
     Vector3D q;
 };
 
-Point3D intersection(const Plane& p, const Line& l, double eps = 1e-10) {
+std::optional<Point3D> intersection(const Plane& p, const Line& l, double eps = 1e-10) {
     Vector3D n = p.norm();
-    if (std::abs(n.scalar_mult(l.l)) < eps)
-        return {};
+    if (std::abs(n.scalar_mult(l.l)) < eps) // line pendicular to plane
+        return std::nullopt;
 
     double t = n.scalar_mult(l.o) / n.scalar_mult(l.l);
 
-    return {
+    return std::optional<Point3D>({
         l.o.x - l.l.x * t,
         l.o.y - l.l.y * t,
         l.o.z - l.l.z * t,
-    };
+    });
 }
 
-Vector3D projection(const Plane& p, const Vector3D& v) {
+std::optional<Vector3D> projection(const Plane& p, const Vector3D& v) {
     Vector3D n = p.norm();
     Line lA(v.a, n);
     Line lB(v.b, n);
-    return {
-        intersection(p, lA),
-        intersection(p, lB),
-    };
+    auto vA = intersection(p, lA);
+    auto vB = intersection(p, lB);
+    if (!vA || !vB)
+        return std::nullopt;
+
+    return std::optional<Vector3D>({
+        vA.value(), vB.value()
+    });
 }
 
 signed main() {
@@ -131,7 +135,7 @@ signed main() {
     Vector3D B = {-4, 7, 2};
     Vector3D v = {A, B};
 
-    auto vp = projection(pi, v);
+    auto vp = projection(pi, v).value();
     write(vp.a.x, vp.a.y, vp.a.z);
     write(vp.b.x, vp.b.y, vp.b.z);
 }
