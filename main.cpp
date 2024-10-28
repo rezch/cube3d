@@ -99,23 +99,16 @@ struct Plane {
 
 Point3D intersection(const Plane& p, const Line& l, double eps = 1e-10) {
     Vector3D n = p.norm();
+    if (std::abs(n.scalar_mult(l.l)) < eps)
+        return {};
 
-    double x = std::abs(l.l.x) < eps ? 0
-        : ((n.y * l.l.y / l.l.x) * l.o.x - l.o.y * n.y +
-        (n.z * l.l.z / l.l.x) * l.o.x - l.o.z * n.z) /
-        (n.x + n.y * l.l.y / l.l.x + n.z * l.l.z / l.l.x);
+    double t = n.scalar_mult(l.o) / n.scalar_mult(l.l);
 
-    double y = std::abs(l.l.y) < eps ? 0
-        : ((n.x * l.l.x / l.l.y) * l.o.y - l.o.x * n.x +
-        (n.z * l.l.z / l.l.y) * l.o.y - l.o.z * n.z) /
-        (n.x * l.l.x / l.l.y + n.y + n.z * l.l.z / l.l.y);
-
-    double z = std::abs(l.l.z) < eps ? 0
-        : ((n.x * l.l.x / l.l.z) * l.o.z - l.o.x * n.x +
-        (n.y * l.l.y / l.l.z) * l.o.z - l.o.y * n.y) /
-        (n.x * l.l.x / l.l.z + n.y * l.l.y / l.l.z + n.z);
-
-    return { x, y, z };
+    return {
+        l.o.x - l.l.x * t,
+        l.o.y - l.l.y * t,
+        l.o.z - l.l.z * t,
+    };
 }
 
 Vector3D projection(const Plane& p, const Vector3D& v) {
