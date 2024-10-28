@@ -1,0 +1,11 @@
+.vscode/*
+
+*CodeRunnerFile.cpp
+
+# CXX
+*.o
+*.obj
+*.a
+*.exe
+*.out
+*.app
