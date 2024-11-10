@@ -51,11 +51,12 @@ public:
             if (side.first.x > x || side.second.x < x)
                 continue;
             if (side.second.x - side.first.x < eps)
-                addResult(x);
+                continue;
             double k = (side.first.y - side.second.y) / (side.first.x - side.second.x);
-            double res = k * x + side.first.y - k * side.first.x;
-            if (res < width_)
-                addResult(res);
+            addResult(
+                std::min(k * x + side.first.y - k * side.first.x,
+                (double)width_)
+            );
         }
         if (result.first > result.second)
             std::swap(result.first, result.second);
