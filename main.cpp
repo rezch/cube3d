@@ -37,9 +37,9 @@ public:
             { polygon.a, polygon.c },
             { polygon.b, polygon.c },
         };
-        std::pair<int, int> result = { -1, -1 };
+        std::pair<int, int> result = { -2, -2 };
         auto addResult = [&result](int y) {
-            if (result.first == -1)
+            if (result.first == -2)
                 result.first = y;
             else
                 result.second = y;
@@ -67,7 +67,7 @@ public:
             for (auto& polygon : drawable_) {
                 auto segment = redraw(x, polygon);
                 result[x].push_back({ segment.first, -1 });
-                result[x].push_back({ segment.second, 1 });
+                result[x].push_back({ segment.second + 1, 1 });
             }
             std::sort(result[x].begin(), result[x].end());
         }
