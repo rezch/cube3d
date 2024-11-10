@@ -89,11 +89,11 @@ public:
             auto curr = segments[x].begin();
             for (size_t y = 0; y < width_; ++y) {
                 while (curr < segments[x].end() && curr->first <= y) {
-                    layer += (curr++)->second;
+                    layer -= (curr++)->second;
                 }
                 if (curr->first != y) {
-                    // matrix_[x][y] = std::max(matrix_[x][y], (uint8_t)((bool)layer));
-                    matrix_[x][y] = bool(layer);
+                    matrix_[x][y] = std::max(matrix_[x][y], (uint8_t)layer);
+                    //matrix_[x][y] = bool(layer);
                     continue;
                 }
             }
