@@ -1,142 +1,112 @@
 #include <bits/stdc++.h>
+
 #include "utils.h"
+#include "geometry.h"
 
 
-struct Point3D {
-    Point3D() = default;
+class Canvas {
+    static constexpr auto FONT = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
 
-    Point3D(double x, double y, double z) :
-        x(x), y(y), z(z) { }
+public:
 
-    Point3D(const Point3D& other) :
-        x(other.x), y(other.y), z(other.z) { }
+    static constexpr int8_t MAX_SATURATION = 92;
 
-    Point3D operator + (const Point3D& o) const {
-        return { x + o.x, y + o.y, z + o.z };
+    Canvas() = default;
+
+    void setSize(size_t height, size_t width) {
+        height_ = height;
+        width_ = width;
+        matrix_ = std::vector<std::vector<int8_t>>(height, std::vector<int8_t>(width));
     }
 
-    Point3D operator - (const Point3D& o) const {
-        return { x - o.x, y - o.y, z - o.z };
+    template<class Os_>
+    void drawScreen(Os_& os) const {
+        for (const auto& line : matrix_) {
+            for (int8_t pixel : line) os << FONT[pixel];
+            os << '\n';
+        }
     }
 
-    Point3D operator * (double t) const {
-        return { t * x, t * y, t * z };
+    void addDrawable(Triangle v) {
+        drawable_.push_back(v);
     }
 
-    double x;
-    double y;
-    double z;
+    std::pair<int, int> redraw(size_t x, const Triangle& polygon) const {
+        std::vector<std::pair<Vector3D, Vector3D>> sides = {
+            { polygon.a, polygon.b },
+            { polygon.a, polygon.c },
+            { polygon.b, polygon.c },
+        };
+        std::pair<int, int> result = { -1, -1 };
+        auto addResult = [&result](int y) {
+            if (result.first == -1)
+                result.first = y;
+            else
+                result.second = y;
+        };
+        for (auto& side : sides) {
+            side.first.toInt();
+            side.second.toInt();
+            if (side.first.x > side.second.x)
+                std::swap(side.first, side.second);
+            if (side.first.x > x || side.second.x < x)
+                continue;
+            if (side.first.x == side.second.x)
+                addResult(x);
+            double k = (side.first.y - side.second.y) / (side.first.x - side.second.x);
+            addResult(
+                k * x + side.first.y - k * side.first.x
+            );
+        }
+        return result;
+    }
+
+    auto scanline() const {
+        std::vector<std::vector<std::pair<size_t, size_t>>> result(height_);
+        for (size_t x = 0; x < height_; ++x) {
+            for (auto& polygon : drawable_) {
+                auto segment = redraw(x, polygon);
+                result[x].push_back({ segment.first, -1 });
+                result[x].push_back({ segment.second, 1 });
+            }
+            std::sort(result[x].begin(), result[x].end());
+        }
+        return result;
+    }
+
+    void redrawScreen() {
+        auto segments = scanline();
+        for (size_t x = 0; x < height_; ++x) {
+            size_t layer{};
+            auto curr = segments[x].begin();
+            for (size_t y = 0; y < width_; ++y) {
+                while (curr < segments[x].end() && curr->first < y) {
+                    layer += (curr++)->second;
+                }
+                if (curr->first != y) {
+                    matrix_[x][y] = layer;
+                    continue;
+                }
+            }
+        }
+    }
+
+    std::vector<Triangle> drawable_;
+    size_t height_;
+    size_t width_;
+    std::vector<std::vector<int8_t>> matrix_;
 };
-
-
-struct Vector3D : public Point3D {
-    Vector3D() = default;
-
-    Vector3D(double x, double y, double z) :
-        Point3D(x, y, z), a({}), b(x, y, z) { }
-
-    Vector3D(const Vector3D& other) :
-        Point3D(other.b - other.a), a(other.a), b(other.b) { }
-
-    Vector3D(const Point3D& p) :
-        Point3D(p), a({}), b(p) { }
-
-    Vector3D(const Point3D& a, const Point3D& b) :
-        Point3D(b - a), a(a), b(b) { }
-
-    double scalar_mult(const Vector3D& other) const {
-        return x * other.x + y * other.y + z * other.z;
-    }
-
-    Vector3D vector_mult(const Vector3D& o) const {
-        return Vector3D{
-            y * o.z - z * o.y,
-            - x * o.z + z * o.x,
-            x * o.y - y * o.x,
-        }.norm();
-    }
-
-    double len() const {
-        return std::sqrt(x * x + y * y + z * z);
-    }
-
-    Vector3D norm() const {
-        double _len = len();
-        return { x / _len, y / _len, z / _len };
-    }
-
-    void toNorm() {
-        double _len = len();
-        x /= _len;
-        y /= _len;
-        z /= _len;
-    }
-
-    Point3D a;
-    Point3D b;
-};
-
-
-struct Line {
-    Line() = default;
-
-    Line(const Point3D& o, const Vector3D& l) :
-        o(o), l(l) { }
-
-    Line(const Vector3D& l) :
-        o({}), l(l) { }
-
-    Line(const Point3D& a, const Point3D& b) :
-        o(a), l(b - a) { }
-
-    Point3D o;
-    Vector3D l;
-};
-
-struct Plane {
-    Vector3D norm() const { return p.vector_mult(q); }
-
-    Point3D m;
-    Vector3D p;
-    Vector3D q;
-};
-
-std::optional<Point3D> intersection(const Plane& p, const Line& l, double eps = 1e-10) {
-    Vector3D n = p.norm();
-    if (std::abs(n.scalar_mult(l.l)) < eps) // line pendicular to plane
-        return std::nullopt;
-
-    return std::optional<Point3D>(
-        l.o - l.l * (n.scalar_mult(l.o) / n.scalar_mult(l.l))
-    );
-}
-
-std::optional<Vector3D> projection(const Plane& p, const Vector3D& v) {
-    Vector3D n = p.norm();
-    Line lA(v.a, n);
-    Line lB(v.b, n);
-    auto vA = intersection(p, lA);
-    auto vB = intersection(p, lB);
-    if (!vA || !vB)
-        return std::nullopt;
-
-    return std::optional<Vector3D>({
-        vA.value(), vB.value()
-    });
-}
 
 signed main() {
-    Point3D M = {2, 1, 4};
-    Vector3D p = {4, 1, 0};
-    Vector3D q = {3, 1, 2};
-    Plane pi = {M, p, q};
+    Vector3D a = { 4, 90, 0 };
+    Vector3D b = { 1, 0, 0 };
+    Vector3D c = { 30, 15, 0 };
+    Triangle t = { a, b, c };
 
-    Point3D A = {-3, 2, 5};
-    Vector3D B = {-4, 7, 2};
-    Vector3D v = {A, B};
-
-    auto vp = projection(pi, v).value();
-    write(vp.a.x, vp.a.y, vp.a.z);
-    write(vp.b.x, vp.b.y, vp.b.z);
+    Canvas canvas;
+    canvas.setSize(36, 120);
+    canvas.addDrawable(t);
+    canvas.redrawScreen();
+    canvas.drawScreen(std::cout);
 }
 
