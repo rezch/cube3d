@@ -7,6 +7,8 @@
 class Canvas {
     static constexpr auto FONT = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@";
 
+    static constexpr double EPS = 1e-8;
+
 public:
 
     static constexpr uint8_t MAX_SATURATION = 92;
@@ -31,35 +33,40 @@ public:
         drawable_.push_back(v);
     }
 
-    std::pair<int, int> redraw(size_t x, const Triangle& polygon) const {
-        constexpr double eps = 1e-8;
+    auto getTriangleSidesForX(size_t x, const Triangle& polygon) const {
         std::vector<std::pair<Vector3D, Vector3D>> sides = {
             { polygon.a, polygon.b },
             { polygon.a, polygon.c },
             { polygon.b, polygon.c },
         };
-        std::pair<double, double> result = { -2, -2 };
-        auto addResult = [&result](double y) {
-            if (result.first == -2)
-                result.first = y;
-            else if (result.second == -2 && std::fabs(result.first - y) > eps)
-                result.second = y;
-        };
+        std::vector<std::pair<Vector3D, Vector3D>> res;
         for (auto& side : sides) {
             if (side.first.x > side.second.x)
                 std::swap(side.first, side.second);
-            if (side.first.x > x || side.second.x < x)
+            if (side.first.x > x || side.second.x < x
+                || side.second.x - side.first.x < EPS)
                 continue;
-            if (side.second.x - side.first.x < eps)
-                continue;
-            double k = (side.first.y - side.second.y) / (side.first.x - side.second.x);
-            addResult(
-                std::min(k * x + side.first.y - k * side.first.x,
-                (double)width_)
-            );
+            res.push_back(side);
         }
-        if (result.first > result.second)
-            std::swap(result.first, result.second);
+        return res;
+    }
+
+    std::pair<int, int> redraw(size_t x, const Triangle& polygon) const {
+        auto sides = getTriangleSidesForX(x, polygon);
+        std::pair<double, double> result = { -2, -2 };
+        auto addResult = [&result](double y) {
+            if (result.first == -2 && std::fabs(result.second - y) > EPS)
+                result.first = y;
+            if (result.first > result.second)
+                std::swap(result.first, result.second);
+        };
+        for (auto& side : sides) {
+            double k = (side.first.y - side.second.y) / (side.first.x - side.second.x);
+            addResult(std::min(
+                k * x + side.first.y - k * side.first.x,
+                (double)width_
+            ));
+        }
         if (result.first == -2)
             result.first = result.second;
         return {
@@ -84,19 +91,12 @@ public:
     void redrawScreen() {
         auto segments = scanline();
         for (size_t x = 0; x < height_; ++x) {
-            if (segments[x].empty())
-                continue;
-            size_t layer{};
             auto curr = segments[x].begin();
-            for (size_t y = 0; y < width_; ++y) {
+            for (size_t y = 0, layer = 0; y < width_; ++y) {
                 while (curr < segments[x].end() && curr->first <= y) {
                     layer -= (curr++)->second;
                 }
-                if (curr->first != y) {
-                    matrix_[x][y] = std::max(matrix_[x][y], (uint8_t)layer);
-                    //matrix_[x][y] = bool(layer);
-                    continue;
-                }
+                matrix_[x][y] = std::max(matrix_[x][y], (uint8_t)layer);
             }
         }
     }
