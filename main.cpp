@@ -23,6 +23,7 @@ public:
 
     template<class Os_>
     void drawScreen(Os_& os) const {
+        os << "\033[0;0H\033[2J"; // clear screen
         for (const auto& line : matrix_) {
             for (uint8_t pixel : line) os << FONT[pixel];
             os << '\n';
@@ -83,7 +84,7 @@ public:
 
     void drawPolygon(const Triangle& polygon) {
         Plane surface = {
-            polygon.a,     // plane point
+            polygon.a,             // plane point
             polygon.b - polygon.a, // plane vec1
             polygon.c - polygon.a  // plane vec2
         };
@@ -104,8 +105,13 @@ public:
     }
 
     void refresh() {
-       for (const auto& polygon : drawable_)
-           drawPolygon(polygon);
+        // clear screen matrix
+        for (size_t x = 0; x < height_; ++x)
+            for (size_t y = 0; y < width_; ++y)
+                matrix_[x][y] = 0;
+        // redraw polygons
+        for (const auto& polygon : drawable_)
+            drawPolygon(polygon);
     }
 
     std::vector<Triangle> drawable_;
@@ -133,7 +139,18 @@ signed main() {
     canvas.addDrawable(t);
     canvas.addDrawable(t1);
 
-    canvas.refresh();
-    canvas.drawScreen(std::cout);
+    using namespace std::chrono_literals;
+    for ( ;; ) {
+        canvas.drawable_[0].b.x += 2;
+        if (canvas.drawable_[0].b.x >= canvas.height_)
+            canvas.drawable_[0].b.x = 0;
+        
+        canvas.drawable_[1].c.x -= 2;
+        if (canvas.drawable_[1].c.x == 0)
+            canvas.drawable_[1].c.x = canvas.height_ - 1;
+        canvas.refresh();
+        canvas.drawScreen(std::cout);
+        std::this_thread::sleep_for(400ms);
+    }
 }
 
