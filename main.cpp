@@ -33,72 +33,79 @@ public:
         drawable_.push_back(v);
     }
 
-    auto getTriangleSidesForX(size_t x, const Triangle& polygon) const {
-        std::vector<std::pair<Vector3D, Vector3D>> sides = {
-            { polygon.a, polygon.b },
-            { polygon.a, polygon.c },
-            { polygon.b, polygon.c },
-        };
-        std::vector<std::pair<Vector3D, Vector3D>> res;
-        for (auto& side : sides) {
-            if (side.first.x > side.second.x)
-                std::swap(side.first, side.second);
-            if (side.first.x > x || side.second.x < x
-                || side.second.x - side.first.x < EPS)
-                continue;
-            res.push_back(side);
-        }
-        return res;
-    }
-
-    std::pair<int, int> redraw(size_t x, const Triangle& polygon) const {
-        auto sides = getTriangleSidesForX(x, polygon);
-        std::pair<double, double> result = { -2, -2 };
-        auto addResult = [&result](double y) {
-            if (result.first == -2 && std::fabs(result.second - y) > EPS)
-                result.first = y;
-            if (result.first > result.second)
-                std::swap(result.first, result.second);
-        };
-        for (auto& side : sides) {
-            double k = (side.first.y - side.second.y) / (side.first.x - side.second.x);
-            addResult(std::min(
-                k * x + side.first.y - k * side.first.x,
-                (double)width_
-            ));
-        }
-        if (result.first == -2)
-            result.first = result.second;
-        return {
-            std::round(result.first),
-            std::floor(result.second)
-        };
-    }
-
-    auto scanline() const {
-        std::vector<std::vector<std::pair<size_t, size_t>>> result(height_);
-        for (size_t x = 0; x < height_; ++x) {
-            for (auto& polygon : drawable_) {
-                auto segment = redraw(x, polygon);
-                result[x].push_back({ segment.first, -1 });
-                result[x].push_back({ segment.second + 1, 1 });
-            }
-            std::sort(result[x].begin(), result[x].end());
-        }
+    double getSurfaceZ(const Plane& p, double x, double y) const {
+        auto n = vector_mult(p.p, p.q); // norm vec
+        if (std::fabs(n.z) < EPS)
+            return 0;
+        double result =
+            (n.x / n.z) * (x - p.m.x) +
+            (n.y / n.z) * (y - p.m.y) +
+            p.m.z;
+        result = std::max(result, 0e0);
         return result;
     }
 
-    void redrawScreen() {
-        auto segments = scanline();
-        for (size_t x = 0; x < height_; ++x) {
-            auto curr = segments[x].begin();
-            for (size_t y = 0, layer = 0; y < width_; ++y) {
-                while (curr < segments[x].end() && curr->first <= y) {
-                    layer -= (curr++)->second;
-                }
-                matrix_[x][y] = std::max(matrix_[x][y], (uint8_t)layer);
+    std::pair<size_t, size_t> getPolygonSegmentX(
+            const Triangle& p
+            ) const {
+        std::array<size_t, 2> result = {
+            (size_t)std::floor(std::min(p.a.x, std::min(p.b.x, p.c.x))),
+            (size_t)std::round(std::max(p.a.x, std::max(p.b.x, p.c.x)))
+        };
+        for (auto& x : result) {
+            x = std::max(x, size_t{});
+            x = std::min(x, height_ - 1);
+        }
+        return { result[0], result[1] };
+    }
+
+    std::pair<size_t, size_t> getPolygonSegmentY(
+            const Triangle& p
+            ) const {
+        std::array<size_t, 2> result = {
+            (size_t)std::floor(std::min(p.a.y, std::min(p.b.y, p.c.y))),
+            (size_t)std::round(std::max(p.a.y, std::max(p.b.y, p.c.y)))
+        };
+        for (auto& y : result) {
+            y = std::max(y, size_t{});
+            y = std::min(y, width_ - 1);
+        }
+        return { result[0], result[1] };
+    }
+
+    bool inPolygon(const Triangle& t, double x, double y) const {
+        double denominator = ((t.b.y - t.c.y) * (t.a.x - t.c.x) + (t.c.x - t.b.x) * (t.a.y - t.c.y));
+        double a = ((t.b.y - t.c.y) * (x - t.c.x) + (t.c.x - t.b.x) * (y - t.c.y)) / denominator;
+        double b = ((t.c.y - t.a.y) * (x - t.c.x) + (t.a.x - t.c.x) * (y - t.c.y)) / denominator;
+        double c = 1 - a - b;
+        return a >= 0 && b >= 0 && c >= 0;
+    }
+
+    void drawPolygon(const Triangle& polygon) {
+        Plane surface = {
+            polygon.a,     // plane point
+            polygon.b - polygon.a, // plane vec1
+            polygon.c - polygon.a  // plane vec2
+        };
+        auto [minX, maxX] = getPolygonSegmentX(polygon);
+        auto [minY, maxY] = getPolygonSegmentY(polygon);
+        for (size_t x = minX; x <= maxX; ++x) {
+            for (size_t y = minY; y <= maxY; ++y) {
+                if (!inPolygon(polygon, x, y))
+                    continue;
+                uint8_t layer = (getSurfaceZ(surface, x, y) / 400) * MAX_SATURATION;
+                matrix_[x][y] = std::max(
+                    matrix_[x][y],
+                    layer
+                );
             }
         }
+        write();
+    }
+
+    void refresh() {
+       for (const auto& polygon : drawable_)
+           drawPolygon(polygon);
     }
 
     std::vector<Triangle> drawable_;
@@ -108,15 +115,17 @@ public:
 };
 
 signed main() {
-    Vector3D a = { 14, 90, 0 };
-    Vector3D b = { 1, 0, 0 };
-    Vector3D c = { 30, 15, 0 };
-    Triangle t = { a, b, c };
+    Triangle t = {
+        { 14, 90, 60 },
+        { 1, 0, 30 },
+        { 30, 15, 15 },
+    };
 
-    Vector3D a1 = { 10, 10, 0 };
-    Vector3D b1 = { 25, 40, 0 };
-    Vector3D c1 = { 36, 79, 0 };
-    Triangle t1 = { a1, b1, c1 };
+    Triangle t1 = {
+        { 14, 90, 80 },
+        { 30, 15, 15 },
+        { 36, 60, 60 }
+    };
 
     Canvas canvas;
     canvas.setSize(36, 120);
@@ -124,7 +133,7 @@ signed main() {
     canvas.addDrawable(t);
     canvas.addDrawable(t1);
 
-    canvas.redrawScreen();
+    canvas.refresh();
     canvas.drawScreen(std::cout);
 }
 

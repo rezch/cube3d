@@ -18,8 +18,28 @@ struct Point3D {
         return { x - o.x, y - o.y, z - o.z };
     }
 
+    Point3D operator + (double t) const {
+        return { x + t, y + t, z + t };
+    }
+
+    Point3D operator - (double t) const {
+        return { x - t, y - t, z - t };
+    }
+
     Point3D operator * (double t) const {
         return { t * x, t * y, t * z };
+    }
+
+    Point3D operator / (double t) const {
+        return { x / t, y / t, z / t };
+    }
+
+    friend Point3D operator + (double t, const Point3D& p) {
+       return p + t; 
+    }
+
+    friend Point3D operator * (double t, const Point3D& p) {
+       return p * t; 
     }
 
     void toInt() {
@@ -111,17 +131,23 @@ struct Plane {
     Vector3D q;
 };
 
-std::optional<Point3D> intersection(const Plane& p, const Line& l, double eps=1e-10) {
+std::optional<Point3D> intersection(
+        const Plane& p,
+        const Line& l,
+        double eps=1e-10) {
     Vector3D n = p.norm();
-    if (std::abs(scalar_mult(n, l.l)) < eps) // line pendicular to plane
-        return std::nullopt;
+    if (std::abs(scalar_mult(n, l.l)) < eps)
+        return std::nullopt; // line pendicular to plane 
 
     return std::optional<Point3D>(
         l.o - l.l * (scalar_mult(n, l.o) / scalar_mult(n, l.l))
     );
 }
 
-std::optional<Vector3D> projection(const Plane& p, const Vector3D& v, double eps=1e-10) {
+std::optional<Vector3D> projection(
+        const Plane& p,
+        const Vector3D& v,
+        double eps=1e-10) {
     Vector3D n = p.norm();
     Line lA(v.a, n);
     Line lB(v.b, n);
