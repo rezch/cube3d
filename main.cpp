@@ -30,10 +30,11 @@ public:
     template<class Os_>
     void drawScreen(Os_& os) const {
         os << "\033[0;0H\033[2J"; // clear screen
-        for (const auto& line : matrix_) {
-            for (uint8_t pixel : line) os << FONT[pixel];
-            os << '\n';
-        }
+        std::string screen(height_ * (width_ + 1), '\n');
+        for (size_t i = 0; i < height_; ++i)
+            for (size_t j = 0; j < width_; ++j)
+                screen[i * (width_ + 1) + j] = FONT[matrix_[i][j]];
+        os << screen;
     }
 
     void addDrawable(Triangle v) {
