@@ -1,5 +1,10 @@
-#include <bits/stdc++.h>
-
+#if defined(__APPLE__)
+    #include <iostream>
+    #include <cmath>
+    #include <optional>
+#else
+    #include <bits/stdc++.h>
+#endif
 
 struct Point3D {
     Point3D() = default;

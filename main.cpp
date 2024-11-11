@@ -1,4 +1,9 @@
-#include <bits/stdc++.h>
+#if defined(__APPLE__)
+    #include <iostream>
+    #include <vector>
+#else
+    #include <bits/stdc++.h>
+#endif
 
 #include "utils.h"
 #include "geometry.h"
