@@ -146,17 +146,20 @@ signed main() {
     canvas.addDrawable(t1);
 
     using namespace std::chrono_literals;
+    bool flag{true};
     for ( ;; ) {
-        canvas.drawable_[0].b.x += 2;
-        if (canvas.drawable_[0].b.x >= canvas.height_)
-            canvas.drawable_[0].b.x = 0;
-        
-        canvas.drawable_[1].c.x -= 2;
-        if (canvas.drawable_[1].c.x == 0)
-            canvas.drawable_[1].c.x = canvas.height_ - 1;
+        canvas.drawable_[0].b.x += flag ? 2 : -2;
+        canvas.drawable_[1].c.x -= flag ? 2 : -2;
+
+        if (canvas.drawable_[0].b.x >= canvas.height_ ||
+            canvas.drawable_[0].b.x < 0 ||
+            canvas.drawable_[1].c.x >= canvas.height_ ||
+            canvas.drawable_[1].c.x <= 0)
+            flag ^= true;
+
         canvas.refresh();
         canvas.drawScreen(std::cout);
-        std::this_thread::sleep_for(400ms);
+        std::this_thread::sleep_for(50ms);
     }
 }
 
