@@ -53,29 +53,14 @@ public:
     std::pair<size_t, size_t> getPolygonSegmentX(
             const Triangle& p
             ) const {
-        std::array<size_t, 2> result = {
-            (size_t)std::floor(std::min(p.a.x, std::min(p.b.x, p.c.x))),
-            (size_t)std::round(std::max(p.a.x, std::max(p.b.x, p.c.x)))
-        };
-        for (auto& x : result) {
-            x = std::max(x, size_t{});
-            x = std::min(x, height_ - 1);
-        }
-        return { result[0], result[1] };
+        return { 0, height_ - 1 };
     }
 
     std::pair<size_t, size_t> getPolygonSegmentY(
             const Triangle& p
             ) const {
-        std::array<size_t, 2> result = {
-            (size_t)std::floor(std::min(p.a.y, std::min(p.b.y, p.c.y))),
-            (size_t)std::round(std::max(p.a.y, std::max(p.b.y, p.c.y)))
-        };
-        for (auto& y : result) {
-            y = std::max(y, size_t{});
-            y = std::min(y, width_ - 1);
-        }
-        return { result[0], result[1] };
+        // TODO: fix that
+        return { 0, width_ - 1 };
     }
 
     bool inPolygon(const Triangle& t, double x, double y) const {
@@ -127,8 +112,8 @@ public:
 signed main() {
     Triangle t = {
         { 14, 90, 0.2 },
-        { 1, 0, 0.3 },
-        { 30, 15, 0.15 },
+        { 1, 0, 0.4 },
+        { 30, 15, 0.4 },
     };
 
     Triangle t1 = {
@@ -138,7 +123,7 @@ signed main() {
     };
 
     Canvas canvas;
-    canvas.setSize(36, 120);
+    canvas.setSize(50, 150);
 
     canvas.addDrawable(t);
     canvas.addDrawable(t1);
@@ -146,15 +131,9 @@ signed main() {
     using namespace std::chrono_literals;
     bool flag{true};
     for ( ;; ) {
-        canvas.drawable_[0].b.x += flag ? 2 : -2;
-        canvas.drawable_[1].c.x -= flag ? 2 : -2;
-
-        if (canvas.drawable_[0].b.x >= canvas.height_ ||
-            canvas.drawable_[0].b.x < 0 ||
-            canvas.drawable_[1].c.x >= canvas.height_ ||
-            canvas.drawable_[1].c.x <= 0)
-            flag ^= true;
-
+        canvas.drawable_[0].rotateX(0.1);
+        canvas.drawable_[1].rotateY(0.1);
+        
         canvas.refresh();
         canvas.drawScreen(std::cout);
         std::this_thread::sleep_for(50ms);

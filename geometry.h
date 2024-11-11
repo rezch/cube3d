@@ -54,6 +54,18 @@ struct Point3D {
         z = std::round(z);
     }
 
+    void rotateX(double angle) {
+        double y_old = y;
+        y = cos(angle) * y - sin(angle) * (z * 100);
+        z = (cos(angle) * (z * 100) + sin(angle) * y_old) / 100;
+    }
+
+    void rotateY(double angle) {
+        double x_old = x;
+        x = sin(angle) * (z * 100) + cos(angle) * x;
+        z = (cos(angle) * (z * 100) - sin(angle) * x_old) / 100;
+    }
+
     double x;
     double y;
     double z;
@@ -167,6 +179,35 @@ std::optional<Vector3D> projection(
 }
 
 struct Triangle {
+
+    Point3D getCentre() const {
+        return (a + b + c) / 3;
+    }
+
+    void moveTo(const Point3D& p) {
+        a = a - p;
+        b = b - p;
+        c = c - p;
+    }
+
+    void rotateX(double angle) {
+        auto centre = getCentre();
+        moveTo(centre);
+        a.rotateX(angle);
+        b.rotateX(angle);
+        c.rotateX(angle);
+        moveTo(centre * -1);
+    }
+
+    void rotateY(double angle) {
+        auto centre = getCentre();
+        moveTo(centre);
+        a.rotateY(angle);
+        b.rotateY(angle);
+        c.rotateY(angle);
+        moveTo(centre * -1);
+    }
+
     Vector3D a;
     Vector3D b;
     Vector3D c;
