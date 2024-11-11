@@ -112,18 +112,18 @@ public:
 signed main() {
     Triangle t = {
         { 14, 90, 0.2 },
-        { 1, 0, 0.4 },
+        { 5, 5, 0.4 },
         { 30, 15, 0.4 },
     };
 
     Triangle t1 = {
         { 14, 90, 0.05 },
         { 30, 15, 0.3 },
-        { 36, 60, 0.05 }
+        { 80, 200, 0.05 }
     };
 
     Canvas canvas;
-    canvas.setSize(50, 150);
+    canvas.setSize(100, 300);
 
     canvas.addDrawable(t);
     canvas.addDrawable(t1);
@@ -131,12 +131,12 @@ signed main() {
     using namespace std::chrono_literals;
     bool flag{true};
     for ( ;; ) {
-        canvas.drawable_[0].rotateX(0.1);
-        canvas.drawable_[1].rotateY(0.1);
+        canvas.drawable_[0].rotateX(0.04);
+        canvas.drawable_[1].rotateY(0.08);
         
         canvas.refresh();
         canvas.drawScreen(std::cout);
-        std::this_thread::sleep_for(50ms);
+        std::this_thread::sleep_for(10ms);
     }
 }
 
