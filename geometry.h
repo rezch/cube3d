@@ -146,7 +146,7 @@ std::optional<Point3D> intersection(
         return std::nullopt; // line pendicular to plane 
 
     return std::optional<Point3D>(
-        l.o - l.l * (scalar_mult(n, l.o) / scalar_mult(n, l.l))
+        l.o - l.l * (scalar_mult(n, p.m - l.o) / scalar_mult(n, l.l))
     );
 }
 

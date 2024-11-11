@@ -41,15 +41,12 @@ public:
     }
 
     double getSurfaceZ(const Plane& p, double x, double y) const {
-        auto n = vector_mult(p.p, p.q); // norm vec
-        if (std::fabs(n.z) < EPS)
-            return 0;
-        double result =
-            (n.x / n.z) * (x - p.m.x) +
-            (n.y / n.z) * (y - p.m.y) +
-            p.m.z;
-        result = std::max(result, 0e0);
-        return result;
+        Line line = {
+            Point3D{ x, y, 0 },  // start point
+            Vector3D{ 0, 0, 1 }  // direction
+        };
+        auto intersec = intersection(p, line);
+        return intersec ? std::fabs(intersec->z) : 0;
     }
 
     std::pair<size_t, size_t> getPolygonSegmentX(
@@ -100,7 +97,7 @@ public:
             for (size_t y = minY; y <= maxY; ++y) {
                 if (!inPolygon(polygon, x, y))
                     continue;
-                uint8_t layer = (getSurfaceZ(surface, x, y) / 400) * MAX_SATURATION;
+                uint8_t layer = std::min(getSurfaceZ(surface, x, y), double{1}) * (MAX_SATURATION - 1);
                 matrix_[x][y] = std::max(
                     matrix_[x][y],
                     layer
@@ -128,15 +125,15 @@ public:
 
 signed main() {
     Triangle t = {
-        { 14, 90, 60 },
-        { 1, 0, 30 },
-        { 30, 15, 15 },
+        { 14, 90, 0.2 },
+        { 1, 0, 0.3 },
+        { 30, 15, 0.15 },
     };
 
     Triangle t1 = {
-        { 14, 90, 80 },
-        { 30, 15, 15 },
-        { 36, 60, 60 }
+        { 14, 90, 0.05 },
+        { 30, 15, 0.3 },
+        { 36, 60, 0.05 }
     };
 
     Canvas canvas;
