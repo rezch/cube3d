@@ -1,4 +1,5 @@
-#include <bits/stdc++.h>
+#include <iostream>
+
 
 template <class... Args>
 void write(Args&&... args) {

@@ -6,6 +6,7 @@
     #include <bits/stdc++.h>
 #endif
 
+
 struct Point3D {
     Point3D() = default;
 
