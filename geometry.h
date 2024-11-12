@@ -1,10 +1,8 @@
-#if defined(__APPLE__)
-    #include <iostream>
-    #include <cmath>
-    #include <optional>
-#else
-    #include <bits/stdc++.h>
-#endif
+#pragma once
+
+#include <iostream>
+#include <cmath>
+#include <optional>
 
 
 struct Point3D {
@@ -46,6 +44,14 @@ struct Point3D {
 
     friend Point3D operator * (double t, const Point3D& p) {
        return p * t; 
+    }
+
+    bool operator == (const Point3D& p) const {
+        return x == p.x && y == p.y && z == p.z;
+    }
+
+    bool operator != (const Point3D& p) const {
+        return !(*this == p);
     }
 
     void toInt() {
@@ -177,40 +183,4 @@ std::optional<Vector3D> projection(
             vA.value(), vB.value()
         });
 }
-
-struct Triangle {
-
-    Point3D getCentre() const {
-        return (a + b + c) / 3;
-    }
-
-    void moveTo(const Point3D& p) {
-        a = a - p;
-        b = b - p;
-        c = c - p;
-    }
-
-    void rotateX(double angle) {
-        auto centre = getCentre();
-        moveTo(centre);
-        a.rotateX(angle);
-        b.rotateX(angle);
-        c.rotateX(angle);
-        moveTo(centre * -1);
-    }
-
-    void rotateY(double angle) {
-        auto centre = getCentre();
-        moveTo(centre);
-        a.rotateY(angle);
-        b.rotateY(angle);
-        c.rotateY(angle);
-        moveTo(centre * -1);
-    }
-
-    Vector3D a;
-    Vector3D b;
-    Vector3D c;
-};
-
 

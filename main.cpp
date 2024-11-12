@@ -1,13 +1,10 @@
-#if defined(__APPLE__)
-    #include <iostream>
-    #include <vector>
-    #include <thread>
-#else
-    #include <bits/stdc++.h>
-#endif
+#include <iostream>
+#include <vector>
+#include <thread>
 
 #include "utils.h"
 #include "geometry.h"
+#include "shapes.h"
 
 
 class Canvas {
@@ -130,7 +127,7 @@ signed main() {
 
     using namespace std::chrono_literals;
     bool flag{true};
-    for ( ;; ) {
+    for ( ;false ; ) {
         canvas.drawable_[0].rotateX(0.04);
         canvas.drawable_[1].rotateY(0.08);
         
