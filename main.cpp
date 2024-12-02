@@ -12,9 +12,9 @@ class Canvas {
 
     static constexpr double EPS = 1e-8;
 
-public:
-
     static constexpr uint8_t MAX_SATURATION = 92;
+
+public:
 
     Canvas() = default;
 
@@ -38,24 +38,27 @@ public:
         drawable_.push_back(v);
     }
 
-    double getSurfaceZ(const Plane& p, double x, double y) const {
+    double mn{}, mx{};
+    double getDepth(const Triangle& polygon, double x, double y) {
+        Plane p = {
+            polygon.a,             // plane point
+            polygon.b - polygon.a, // plane vec1
+            polygon.c - polygon.a  // plane vec2
+        };
         Line line = {
-            Point3D{ x, y, 0 },  // start point
-            Vector3D{ 0, 0, 1 }  // direction
+            Point3D{ x, y, 0 },       // start point
+            Vector3D{ 0, 0, 1 } // direction
         };
         auto intersec = intersection(p, line);
-        return intersec ? std::fabs(intersec->z) : 0;
+        return intersec ? intersec->z : 0;
     }
 
-    std::pair<size_t, size_t> getPolygonSegmentX(
-            const Triangle& p
-            ) const {
+    std::pair<size_t, size_t> getPolygonSegmentX(const Triangle&) const {
+        // TODO: fix that
         return { 0, height_ - 1 };
     }
 
-    std::pair<size_t, size_t> getPolygonSegmentY(
-            const Triangle& p
-            ) const {
+    std::pair<size_t, size_t> getPolygonSegmentY(const Triangle&) const {
         // TODO: fix that
         return { 0, width_ - 1 };
     }
@@ -69,29 +72,27 @@ public:
     }
 
     void drawPolygon(const Triangle& polygon) {
-        Plane surface = {
-            polygon.a,             // plane point
-            polygon.b - polygon.a, // plane vec1
-            polygon.c - polygon.a  // plane vec2
-        };
         auto [minX, maxX] = getPolygonSegmentX(polygon);
         auto [minY, maxY] = getPolygonSegmentY(polygon);
         for (size_t x = minX; x <= maxX; ++x) {
             for (size_t y = minY; y <= maxY; ++y) {
                 if (!inPolygon(polygon, x, y))
                     continue;
-                uint8_t layer = std::min(getSurfaceZ(surface, x, y), double{1}) * (MAX_SATURATION - 1);
+
+                uint8_t layer = getDepth(polygon, x, y) * double(MAX_SATURATION - 1);
+
+                if (layer < 0)
+                    continue;
+
                 matrix_[x][y] = std::max(
                     matrix_[x][y],
                     layer
                 );
             }
         }
-        write();
     }
 
     void refresh() {
-        // clear screen matrix
         for (size_t x = 0; x < height_; ++x)
             for (size_t y = 0; y < width_; ++y)
                 matrix_[x][y] = 0;
@@ -114,9 +115,9 @@ signed main() {
     };
 
     Triangle t1 = {
-        { 14, 90, 0.05 },
+        { 14, 90, 0.1 },
         { 30, 15, 0.3 },
-        { 80, 200, 0.05 }
+        { 80, 200, 0.2 }
     };
 
     Canvas canvas;
@@ -126,14 +127,13 @@ signed main() {
     canvas.addDrawable(t1);
 
     using namespace std::chrono_literals;
-    bool flag{true};
-    for ( ;false ; ) {
+    for (int i = 0; i < 200; ++i) {
         canvas.drawable_[0].rotateX(0.04);
         canvas.drawable_[1].rotateY(0.08);
-        
         canvas.refresh();
         canvas.drawScreen(std::cout);
         std::this_thread::sleep_for(10ms);
     }
+    write(canvas.mn, canvas.mx);
 }
 

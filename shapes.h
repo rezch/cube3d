@@ -25,9 +25,6 @@ struct Triangle : public Shape {
         const Point3D& c)
         : a(a), b(b), c(c) { }
 
-    Triangle(const Triangle& t)
-        : a(t.a), b(t.b), c(t.c) { }
-
     Point3D getCentre() const {
         return (a + b + c) / 3;
     }
@@ -71,7 +68,7 @@ struct Rectangle : public Shape {
         const Point3D& b,
         const Point3D& c) {
         polygons_.first = { a, b, c };
-        
+
         // try to find 4th point
         if (get4thPoint(a, b, c)) return;
         if (get4thPoint(b, a, c)) return;
@@ -97,11 +94,10 @@ private:
 };
 
 struct Cube : public Shape {
-    Cube(const Point3D& a, const Point3D& b) {
+    Cube(const Point3D&, const Point3D&) {
         // construct cube by it's centre and one corner point
-        
     }
 
-    std::vector<Triangle> polygons_; 
+    std::vector<Triangle> polygons_;
 };
 

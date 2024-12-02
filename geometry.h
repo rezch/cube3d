@@ -11,9 +11,6 @@ struct Point3D {
     Point3D(double x, double y, double z) :
         x(x), y(y), z(z) { }
 
-    Point3D(const Point3D& other) :
-        x(other.x), y(other.y), z(other.z) { }
-
     Point3D operator + (const Point3D& o) const {
         return { x + o.x, y + o.y, z + o.z };
     }
@@ -39,11 +36,11 @@ struct Point3D {
     }
 
     friend Point3D operator + (double t, const Point3D& p) {
-       return p + t; 
+       return p + t;
     }
 
     friend Point3D operator * (double t, const Point3D& p) {
-       return p * t; 
+       return p * t;
     }
 
     bool operator == (const Point3D& p) const {
@@ -83,9 +80,6 @@ struct Vector3D : public Point3D {
 
     Vector3D(double x, double y, double z) :
         Point3D(x, y, z), a({}), b(x, y, z) { }
-
-    Vector3D(const Vector3D& other) :
-        Point3D(other.b - other.a), a(other.a), b(other.b) { }
 
     Vector3D(const Point3D& p) :
         Point3D(p), a({}), b(p) { }
@@ -143,6 +137,16 @@ struct Line {
     Line(const Point3D& a, const Point3D& b) :
         o(a), l(b - a) { }
 
+    Line norm() const {
+        auto copy = *this;
+        copy.toNorm();
+        return copy;
+    }
+
+    void toNorm() {
+        l.toNorm();
+    }
+
     Point3D o;
     Vector3D l;
 };
@@ -158,13 +162,14 @@ struct Plane {
 std::optional<Point3D> intersection(
         const Plane& p,
         const Line& l,
-        double eps=1e-10) {
+        double eps=1e-8) {
     Vector3D n = p.norm();
-    if (std::abs(scalar_mult(n, l.l)) < eps)
-        return std::nullopt; // line pendicular to plane 
+    Line ln = l.norm();
+    if (std::abs(scalar_mult(n, ln.l)) < eps)
+        return std::nullopt; // line pendicular to plane
 
     return std::optional<Point3D>(
-        l.o - l.l * (scalar_mult(n, p.m - l.o) / scalar_mult(n, l.l))
+        ln.o + ln.l * (scalar_mult(n, p.m - ln.o) / scalar_mult(n, ln.l))
     );
 }
 
