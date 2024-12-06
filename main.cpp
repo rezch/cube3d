@@ -1,6 +1,8 @@
+#include <functional>
 #include <iostream>
-#include <vector>
+#include <memory>
 #include <thread>
+#include <vector>
 
 #include "utils.h"
 #include "geometry.h"
@@ -34,12 +36,11 @@ public:
         os << screen;
     }
 
-    void addDrawable(Triangle v) {
-        drawable_.push_back(v);
+    void addDrawable(std::unique_ptr<Shape>&& object) {
+        drawable_.push_back(std::move(object));
     }
 
-    double mn{}, mx{};
-    double getDepth(const Triangle& polygon, double x, double y) {
+    static double getDepth(const Triangle& polygon, double x, double y) {
         Plane p = {
             polygon.a,             // plane point
             polygon.b - polygon.a, // plane vec1
@@ -53,17 +54,23 @@ public:
         return intersec ? intersec->z : 0;
     }
 
-    std::pair<size_t, size_t> getPolygonSegmentX(const Triangle&) const {
+    static std::pair<size_t, size_t> getPolygonSegmentX(const Triangle& p) {
         // TODO: fix that
-        return { 0, height_ - 1 };
+        return {
+            (size_t)std::min(0., std::min(p.a.x, std::min(p.b.x, p.c.x))),
+            (size_t)std::max(1., std::max(p.a.x, std::max(p.b.x, p.c.x)))
+        };
     }
 
-    std::pair<size_t, size_t> getPolygonSegmentY(const Triangle&) const {
+    static std::pair<size_t, size_t> getPolygonSegmentY(const Triangle& p) {
         // TODO: fix that
-        return { 0, width_ - 1 };
+        return {
+            (size_t)std::min(0., std::min(p.a.y, std::min(p.b.y, p.c.y))),
+            (size_t)std::max(1., std::max(p.a.y, std::max(p.b.y, p.c.y)))
+        };
     }
 
-    bool inPolygon(const Triangle& t, double x, double y) const {
+    static bool inPolygon(const Triangle& t, double x, double y) {
         double denominator = ((t.b.y - t.c.y) * (t.a.x - t.c.x) + (t.c.x - t.b.x) * (t.a.y - t.c.y));
         double a = ((t.b.y - t.c.y) * (x - t.c.x) + (t.c.x - t.b.x) * (y - t.c.y)) / denominator;
         double b = ((t.c.y - t.a.y) * (x - t.c.x) + (t.a.x - t.c.x) * (y - t.c.y)) / denominator;
@@ -71,7 +78,8 @@ public:
         return a >= 0 && b >= 0 && c >= 0;
     }
 
-    void drawPolygon(const Triangle& polygon) {
+    static void drawPolygon(std::vector<std::vector<uint8_t>>& matrix,
+            const Triangle& polygon) {
         auto [minX, maxX] = getPolygonSegmentX(polygon);
         auto [minY, maxY] = getPolygonSegmentY(polygon);
         for (size_t x = minX; x <= maxX; ++x) {
@@ -84,8 +92,8 @@ public:
                 if (layer < 0)
                     continue;
 
-                matrix_[x][y] = std::max(
-                    matrix_[x][y],
+                matrix[x][y] = std::max(
+                    matrix[x][y],
                     layer
                 );
             }
@@ -96,25 +104,34 @@ public:
         for (size_t x = 0; x < height_; ++x)
             for (size_t y = 0; y < width_; ++y)
                 matrix_[x][y] = 0;
-        // redraw polygons
-        for (const auto& polygon : drawable_)
-            drawPolygon(polygon);
+
+        // TODO: fix screen matrix forwarding
+        for (const auto& object : drawable_) { // redraw polygons
+            object->acceptVisitor(
+                std::bind(
+                    drawPolygon,
+                    matrix_,
+                    std::placeholders::_1
+                )
+            );
+        }
+        
     }
 
-    std::vector<Triangle> drawable_;
+    std::vector<std::unique_ptr<Shape>> drawable_;
     size_t height_;
     size_t width_;
     std::vector<std::vector<uint8_t>> matrix_;
 };
 
 signed main() {
-    Triangle t = {
+    Polygon t = {
         { 14, 90, 0.2 },
         { 5, 5, 0.4 },
         { 30, 15, 0.4 },
     };
 
-    Triangle t1 = {
+    Polygon t1 = {
         { 14, 90, 0.1 },
         { 30, 15, 0.3 },
         { 80, 200, 0.2 }
@@ -123,17 +140,16 @@ signed main() {
     Canvas canvas;
     canvas.setSize(100, 300);
 
-    canvas.addDrawable(t);
-    canvas.addDrawable(t1);
+    canvas.addDrawable(std::make_unique<Polygon>(t));
+    canvas.addDrawable(std::make_unique<Polygon>(t1));
 
     using namespace std::chrono_literals;
-    for (int i = 0; i < 200; ++i) {
-        canvas.drawable_[0].rotateX(0.04);
-        canvas.drawable_[1].rotateY(0.08);
+    for (int i = 0; i < 1; ++i) {
+        canvas.drawable_[0]->rotateX(0.04);
+        canvas.drawable_[1]->rotateY(0.08);
         canvas.refresh();
-        canvas.drawScreen(std::cout);
+        // canvas.drawScreen(std::cout);
         std::this_thread::sleep_for(10ms);
     }
-    write(canvas.mn, canvas.mx);
 }
 

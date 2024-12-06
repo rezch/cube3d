@@ -60,13 +60,13 @@ struct Point3D {
     void rotateX(double angle) {
         double y_old = y;
         y = cos(angle) * y - sin(angle) * (z * 100);
-        z = (cos(angle) * (z * 100) + sin(angle) * y_old) / 100;
+        z = (cos(angle) * (z * 100) + sin(angle) * y_old) / 100; // "/100" - temp
     }
 
     void rotateY(double angle) {
         double x_old = x;
         x = sin(angle) * (z * 100) + cos(angle) * x;
-        z = (cos(angle) * (z * 100) - sin(angle) * x_old) / 100;
+        z = (cos(angle) * (z * 100) - sin(angle) * x_old) / 100; // "/100" - temp
     }
 
     double x;
@@ -113,11 +113,11 @@ struct Vector3D : public Point3D {
     Point3D b;
 };
 
-double scalar_mult(const Vector3D& a, const Vector3D& b) {
+inline double scalarMult(const Vector3D& a, const Vector3D& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-Vector3D vector_mult(const Vector3D& a, const Vector3D& b) {
+inline Vector3D vectorMult(const Vector3D& a, const Vector3D& b) {
     return {
         a.y * b.z - a.z * b.y,
         - a.x * b.z + a.z * b.x,
@@ -152,28 +152,28 @@ struct Line {
 };
 
 struct Plane {
-    Vector3D norm() const { return vector_mult(p, q); }
+    Vector3D norm() const { return vectorMult(p, q); }
 
     Point3D m;
     Vector3D p;
     Vector3D q;
 };
 
-std::optional<Point3D> intersection(
+inline std::optional<Point3D> intersection(
         const Plane& p,
         const Line& l,
         double eps=1e-8) {
     Vector3D n = p.norm();
     Line ln = l.norm();
-    if (std::abs(scalar_mult(n, ln.l)) < eps)
+    if (std::abs(scalarMult(n, ln.l)) < eps)
         return std::nullopt; // line pendicular to plane
 
     return std::optional<Point3D>(
-        ln.o + ln.l * (scalar_mult(n, p.m - ln.o) / scalar_mult(n, ln.l))
+        ln.o + ln.l * (scalarMult(n, p.m - ln.o) / scalarMult(n, ln.l))
     );
 }
 
-std::optional<Vector3D> projection(
+inline std::optional<Vector3D> projection(
         const Plane& p,
         const Vector3D& v,
         double eps=1e-10) {
@@ -189,3 +189,18 @@ std::optional<Vector3D> projection(
         });
 }
 
+
+struct Triangle {
+
+    Triangle() = default;
+
+    Triangle(Point3D a, Point3D b, Point3D c) : a(a), b(b), c(c) { }
+
+    Point3D getCentre() const {
+        return (a + b + c) / 3;
+    }
+
+    Vector3D a;
+    Vector3D b;
+    Vector3D c;
+};

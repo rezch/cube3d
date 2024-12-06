@@ -1,61 +1,55 @@
 #pragma once
 
-#include <vector>
-
 #include "geometry.h"
+#include "utils.h"
+
+#include <functional>
+#include <iterator>
+#include <vector>
 
 
 struct Shape {
-
     ~Shape() = default;
 
-    virtual void move(const Point3D& to) = 0;
-
+    virtual void moveToPoint(const Point3D& to) = 0;
     virtual void rotateX(double angle) = 0;
-
     virtual void rotateY(double angle) = 0;
+    virtual void acceptVisitor(std::function<void(const Triangle&)>&&) const = 0;
 };
 
-struct Triangle : public Shape {
 
-    Triangle() = default;
+struct Polygon : public Triangle, public Shape {
+    Polygon() = default;
 
-    Triangle(const Point3D& a,
-        const Point3D& b,
-        const Point3D& c)
-        : a(a), b(b), c(c) { }
+    Polygon(Point3D a, Point3D b, Point3D c) : Triangle(a, b, c) { }
 
-    Point3D getCentre() const {
-        return (a + b + c) / 3;
-    }
-
-    void move(const Point3D& p) override {
+    void moveToPoint(const Point3D& p) override {
         a = a - p;
         b = b - p;
         c = c - p;
     }
 
-    void rotateX(double angle) override {
+    void rotateX(double angle) override { // TODO for point based rotation
         auto centre = getCentre();
-        move(centre);
+        moveToPoint(centre);
         a.rotateX(angle);
         b.rotateX(angle);
         c.rotateX(angle);
-        move(centre * -1);
+        moveToPoint(centre * -1);
     }
 
-    void rotateY(double angle) override {
+    void rotateY(double angle) override { // TODO for point based rotation
         auto centre = getCentre();
-        move(centre);
+        moveToPoint(centre);
         a.rotateY(angle);
         b.rotateY(angle);
         c.rotateY(angle);
-        move(centre * -1);
+        moveToPoint(centre * -1);
     }
 
-    Vector3D a;
-    Vector3D b;
-    Vector3D c;
+    void acceptVisitor(std::function<void(const Triangle&)>&& visitor) const override {
+        visitor(*this);
+    }
 };
 
 
@@ -69,9 +63,9 @@ struct Rectangle : public Shape {
         const Point3D& c) {
         polygons_.first = { a, b, c };
 
-        // try to find 4th point
+        // try to find 4-th point
         if (get4thPoint(a, b, c)) return;
-        if (get4thPoint(b, a, c)) return;
+        if (get4thPoint(b, c, a)) return;
         if (get4thPoint(c, a, b)) return;
     }
 
