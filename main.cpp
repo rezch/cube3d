@@ -56,18 +56,20 @@ public:
 
     static std::pair<size_t, size_t> getPolygonSegmentX(const Triangle& p) {
         // TODO: fix that
-        return {
-            (size_t)std::min(0., std::min(p.a.x, std::min(p.b.x, p.c.x))),
-            (size_t)std::max(1., std::max(p.a.x, std::max(p.b.x, p.c.x)))
-        };
+        return {0, 100};
+        // return {
+        //     (size_t)std::min(0., std::min(p.a.x, std::min(p.b.x, p.c.x))),
+        //     (size_t)std::max(1., std::max(p.a.x, std::max(p.b.x, p.c.x)))
+        // };
     }
 
     static std::pair<size_t, size_t> getPolygonSegmentY(const Triangle& p) {
         // TODO: fix that
-        return {
-            (size_t)std::min(0., std::min(p.a.y, std::min(p.b.y, p.c.y))),
-            (size_t)std::max(1., std::max(p.a.y, std::max(p.b.y, p.c.y)))
-        };
+        return {0, 300};
+        // return {
+        //     (size_t)std::min(0., std::min(p.a.y, std::min(p.b.y, p.c.y))),
+        //     (size_t)std::max(1., std::max(p.a.y, std::max(p.b.y, p.c.y)))
+        // };
     }
 
     static bool inPolygon(const Triangle& t, double x, double y) {
@@ -78,7 +80,7 @@ public:
         return a >= 0 && b >= 0 && c >= 0;
     }
 
-    static void drawPolygon(std::vector<std::vector<uint8_t>>& matrix,
+    static void drawPolygon(std::vector<std::vector<uint8_t>>* matrix,
             const Triangle& polygon) {
         auto [minX, maxX] = getPolygonSegmentX(polygon);
         auto [minY, maxY] = getPolygonSegmentY(polygon);
@@ -92,8 +94,8 @@ public:
                 if (layer < 0)
                     continue;
 
-                matrix[x][y] = std::max(
-                    matrix[x][y],
+                (*matrix)[x][y] = std::max(
+                    (*matrix)[x][y],
                     layer
                 );
             }
@@ -110,12 +112,11 @@ public:
             object->acceptVisitor(
                 std::bind(
                     drawPolygon,
-                    matrix_,
+                    &matrix_,
                     std::placeholders::_1
                 )
             );
         }
-        
     }
 
     std::vector<std::unique_ptr<Shape>> drawable_;
@@ -132,9 +133,9 @@ signed main() {
     };
 
     Polygon t1 = {
-        { 14, 90, 0.1 },
+        { 14, 70, 0.4 },
         { 30, 15, 0.3 },
-        { 80, 200, 0.2 }
+        { 80, 80, 0.2 }
     };
 
     Canvas canvas;
@@ -144,11 +145,11 @@ signed main() {
     canvas.addDrawable(std::make_unique<Polygon>(t1));
 
     using namespace std::chrono_literals;
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 200; ++i) {
         canvas.drawable_[0]->rotateX(0.04);
         canvas.drawable_[1]->rotateY(0.08);
         canvas.refresh();
-        // canvas.drawScreen(std::cout);
+        canvas.drawScreen(std::cout);
         std::this_thread::sleep_for(10ms);
     }
 }

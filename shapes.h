@@ -48,7 +48,7 @@ struct Polygon : public Triangle, public Shape {
     }
 
     void acceptVisitor(std::function<void(const Triangle&)>&& visitor) const override {
-        visitor(*this);
+        visitor(std::move(*this));
     }
 };
 
