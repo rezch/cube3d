@@ -4,17 +4,17 @@
 
 
 template <class... Args>
-void write(Args&&... args) {
+inline void write(Args&&... args) {
     ((std::cout << args << ' '), ...) << std::endl;
 };
 
-void write() {
+inline void write() {
     std::cout << std::endl;
 }
 
 
 template <class... Args>
-void read(Args&&... args) {
+inline void read(Args&&... args) {
     ((std::cin >> args), ...);
 };
 
