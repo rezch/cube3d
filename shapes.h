@@ -9,7 +9,7 @@
 
 
 struct Shape {
-    ~Shape() = default;
+    virtual ~Shape() = default;
 
     virtual void moveToPoint(const Point3D& to) = 0;
     virtual void rotateX(double angle) = 0;
