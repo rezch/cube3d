@@ -1,0 +1,48 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+---
+Language: Cpp
+SpaceInEmptyBlock: true
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: All
+ShortNamespaceLines: 0
+FixNamespaceComments: true
+
+# Empty lines
+CompactNamespaces: false
+EmptyLineAfterAccessModifier: Leave
+MaxEmptyLinesToKeep: 2
+
+# Indents
+AccessModifierOffset: -4
+Cpp11BracedListStyle: false
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: true
+  AlignCompound: true
+AlignAfterOpenBracket: AlwaysBreak
+BinPackParameters: AlwaysOnePerLine
+BinPackArguments: false
+AllowShortCaseExpressionOnASingleLine: true
+BreakBeforeBinaryOperators: NonAssignment
+AlignArrayOfStructures: Right
+ColumnLimit: 0
+
+# Braces
+BreakBeforeTernaryOperators: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  BeforeLambdaBody: true
+  SplitEmptyNamespace: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+---
+Language: C
+AlignConsecutiveAssignments: true
+Cpp11BracedListStyle: false
+BreakBeforeTernaryOperators: true
+SpaceInEmptyBlock: true
+---
